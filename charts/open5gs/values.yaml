@@ -1,5 +1,6 @@
-dbURI: "mongodb://{{ .Release.Name }}-mongodb/open5gs"
+dbURI: "mongodb://open5gs-core-mongodb/open5gs"
 
+# --- 1. POPULATE ---
 populate:
   enabled: true
   image:
@@ -8,40 +9,38 @@ populate:
     tag: 0.10.3
     pullPolicy: IfNotPresent
   initCommands: []
-  # example of initCommands:
-  #  - open5gs-dbctl add 999700000000001 465B5CE8B199B49FAA5F0A2EE238A6BC E8ED289DEBA952E4283B54E88E6183CA
-  #  - open5gs-dbctl add_ue_with_apn 999700000000002 465B5CE8B199B49FAA5F0A2EE238A6BC E8ED289DEBA952E4283B54E88E6183CA internet
-  #  - open5gs-dbctl add_ue_with_slice 999700000000003 465B5CE8B199B49FAA5F0A2EE238A6BC E8ED289DEBA952E4283B54E88E6183CA internet 1 111111
 
-# Common
+# Configuración MongoDB con Bitnami Legacy
 mongodb:
   enabled: true
   auth:
     enabled: false
-smf:
-  enabled: true
-upf:
-  enabled: true
-webui:
-  enabled: true
+  
+  # Usamos el repositorio Legacy que sí tiene la imagen 4.4
+  image:
+    registry: docker.io
+    repository: bitnamilegacy/mongodb
+    tag: "4.4.9"
+    pullPolicy: IfNotPresent
 
-# 4G
-hss:
-  enabled: true
-  mongodb:
-    enabled: false
-mme:
-  enabled: true
-pcrf:
-  enabled: true
-  mongodb:
-    enabled: false
-sgwc:
-  enabled: true
-sgwu:
-  enabled: true
+# --- ACTIVAMOS PERSISTENCIA ---
+  persistence:
+    enabled: true                # <--- SÍ
+    storageClass: "local-path"   # <--- La magia de K3s (usa tu disco duro local)
+    size: 2Gi                    # 2GB sobran para millones de usuarios
+    accessModes:
+      - ReadWriteOnce
 
-# 5G
+  # --- EL TRUCO MAESTRO: Desactivar los chequeos ---
+  # Esto evita que Kubernetes reinicie el pod si los scripts de salud fallan
+  livenessProbe:
+    enabled: false
+  readinessProbe:
+    enabled: false
+  startupProbe:
+    enabled: false
+
+# --- 3. Plano de Control 5G ---
 amf:
   enabled: true
 ausf:
@@ -60,11 +59,39 @@ scp:
   enabled: true
   mongodb:
     enabled: false
-sepp:
-  enabled: true
 udm:
   enabled: true
 udr:
   enabled: true
-  mongodb:
-    enabled: false
+
+# --- 4. Plano de Usuario ---
+upf:
+  enabled: true
+  ip_forwarding: true
+
+# --- 5. SMF & PCRF ---
+smf:
+  enabled: true
+  config:
+    pcrf:
+      enabled: true 
+pcrf:
+  enabled: true
+
+# --- 6. Legacy 4G (Apagado) ---
+hss:
+  enabled: false
+mme:
+  enabled: false
+sgwc:
+  enabled: false
+sgwu:
+  enabled: false
+
+# --- 7. WebUI ---
+webui:
+  enabled: true
+
+global:
+  image:
+    pullPolicy: IfNotPresent
