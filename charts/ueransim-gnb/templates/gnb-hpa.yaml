@@ -11,6 +11,6 @@ spec:
   maxReplicas: 1
   scaleTargetRef:
     apiVersion: apps/v1
-    kind: StatefulSet
+    kind: Deployment
     name: {{ template "common.names.fullname" . }}
 
