@@ -351,3 +351,8 @@ services:
     ##     timeoutSeconds: 300
     ##
     sessionAffinityConfig: {}
+    autoscaling:
+      enabled: false
+      minReplicas: 1
+      maxReplicas: 3
+
