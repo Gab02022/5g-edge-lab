@@ -49,7 +49,6 @@ bsf:
   enabled: true
 nrf:
   enabled: true
-  replicaCount: 3
 nssf:
   enabled: true
 pcf:
